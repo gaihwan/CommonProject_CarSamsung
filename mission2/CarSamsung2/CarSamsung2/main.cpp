@@ -1,4 +1,5 @@
-#ifdef _RELEASE
+#ifdef _DEBUG
+
 
 #include "gmock/gmock.h"
 
@@ -45,10 +46,6 @@ int main() {
     menuLevel1->Add(std::make_unique<MenuItem>("CarSedan", factory.Create("CarSedan")));
     menuLevel1->Add(std::make_unique<MenuItem>("CarSUV", factory.Create("CarSUV")));
     menuLevel1->Add(std::make_unique<MenuItem>("CarTruck", factory.Create("CarTruck")));
-
-
-    //////fileMenu->Add(std::make_unique<MenuItem>("SteeringType", factory.Create("Steering")));
-    ////
 
     ////// 2. 메뉴 구성 (Composite 구조)
     root->Add(std::move(menuLevel1));
@@ -132,7 +129,7 @@ void getInput(char* inputBuf)
     strtok_s(inputBuf, "\n", &context);
 }
 
-static MenuGroup root;
+//static MenuGroup root;
 
 int main()
 {

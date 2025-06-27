@@ -10,12 +10,12 @@ public:
 };
 
 // === Composite 메뉴 그룹 ===
-class MenuGroup : public IMenuGroup {
+class MenuGroup_test : public IMenuGroup {
     std::string name;
     std::vector<std::unique_ptr<IMenuGroup>> children;
 
 public:
-    MenuGroup(const std::string& n) : name(n) {}
+    MenuGroup_test(const std::string& n) : name(n) {}
 
     void Add(std::unique_ptr<IMenuGroup> child) {
         children.push_back(std::move(child));

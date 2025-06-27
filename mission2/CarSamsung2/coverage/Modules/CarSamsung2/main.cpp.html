@@ -1,0 +1,510 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+        <meta charset="utf-8"/>
+	    <title>main.cpp</title>
+	    <link href="../../third-party/google-code-prettify/prettify-CppCoverage.css" type="text/css" rel="stylesheet" />
+	    <script type="text/javascript" src="../../third-party/google-code-prettify/prettify.js"></script>
+	</head>
+    <body onload="prettyPrint()">
+        <h4></h4>
+        <pre class="prettyprint lang-cpp linenums">
+#ifdef _DEBUG
+
+
+#include "gmock/gmock.h"
+
+int main()
+<span style = "background-color:#dfd">{
+    testing::InitGoogleMock();
+    return RUN_ALL_TESTS();
+}</span>
+
+#else
+
+#include &lt;iostream&gt;
+#include &lt;memory&gt;
+#include &lt;unordered_map&gt;
+#include &lt;string&gt;
+#include &lt;functional&gt;
+
+#include "ICommand.h"
+#include "Command.h"
+#include "CommandFactory.h"
+#include "Menu.h"
+
+#if 1
+int main() {
+
+    CommandFactory factory;
+    factory.Register("CarSedan", []() { return std::make_unique &lt;CarTypeSedanCommand&gt;(); });
+    factory.Register("CarSUV", []() { return std::make_unique &lt;CarTypeSUVCommand&gt;(); });
+    factory.Register("CarTruck", []() { return std::make_unique &lt;CarTypeTruckCommand&gt;(); });
+    factory.Register("BrakeBosch", []() { return std::make_unique&lt;BrakeTypeBoschCommand&gt;(); });
+    factory.Register("BrakeContinental", []() { return std::make_unique &lt;BrakeTypeContinentalCommand&gt;(); });
+    factory.Register("BrakeMando", []() { return std::make_unique &lt;BrakeTypeMandoCommand&gt;(); });
+    factory.Register("EngineBroken", []() { return std::make_unique &lt;EngineTypeBrokenCommand&gt;(); });
+    factory.Register("EngineGM", []() { return std::make_unique &lt;EngineTypeGMCommand&gt;(); });
+    factory.Register("EngineToyota", []() { return std::make_unique &lt;EngineTypeToyotaCommand&gt;(); });
+    factory.Register("EngineWia", []() { return std::make_unique &lt;EngineTypeWiaCommand&gt;(); });
+    factory.Register("SteeringBosch", []() { return std::make_unique &lt;SteeringTypeBoschCommand&gt;(); });
+    factory.Register("SteeringMobis", []() { return std::make_unique &lt;SteeringTypeMobisCommand&gt;(); });
+
+    //// 2. ¸Þ´º ±¸¼º (Composite ±¸Á¶)
+    auto root = std::make_unique&lt;MenuGroup&gt;("Main Menu");
+
+    auto menuLevel1 = std::make_unique&lt;MenuGroup&gt;("CAR_TYPE");
+    menuLevel1-&gt;Add(std::make_unique&lt;MenuItem&gt;("CarSedan", factory.Create("CarSedan")));
+    menuLevel1-&gt;Add(std::make_unique&lt;MenuItem&gt;("CarSUV", factory.Create("CarSUV")));
+    menuLevel1-&gt;Add(std::make_unique&lt;MenuItem&gt;("CarTruck", factory.Create("CarTruck")));
+
+    ////// 2. ¸Þ´º ±¸¼º (Composite ±¸Á¶)
+    root-&gt;Add(std::move(menuLevel1));
+
+    ////// 3. ¸Þ´º Ãâ·Â
+    root-&gt;Display();
+}
+
+#else
+#include &lt;stdio.h&gt;
+#include &lt;string.h&gt;
+#include &lt;stdlib.h&gt;
+
+#include "BrakeTypeMenuGroup.h"
+#include "EngineTypeMenuGroup.h"
+#include "SteeringTypeMenuGroup.h"
+#include "CarTypeMenuGroup.h"
+#include "RunTestMenuGroup.h"
+#include "RootMenuGroup.h"
+
+
+const int QUESTION_TYPE_STACKS = 10;
+int QuestionTypeStack[QUESTION_TYPE_STACKS];
+
+bool needToGoVeryFirst(int&amp; questionTypeStep, int answer);
+bool needToGoPrevious(int&amp; questionTypeStep, int answer);
+
+bool isExitRequested(char  inputBuf[100]);
+bool isNumeric(char* checkNumber);
+
+
+bool isCarTypeValidity(int questionTypeStep, int answer);
+bool isEngineTypeValidity(int questionTypeStep, int answer);
+bool isBrakeTypeValidity(int questionTypeStep, int answer);
+bool isSteeringTypeValidity(int questionTypeStep, int answer);
+bool isRunTestValidity(int questionTypeStep, int answer);
+
+void selectCarType(int answer);
+void selectEngine(int answer);
+void selectbrakeSystem(int answer);
+void selectSteeringSystem(int answer);
+
+void runProducedCar(void);
+void testProducedCar(void);
+
+void printMenuCarType(void);
+void printMenuEngine(void);
+void printMenuBrakeSystem(void);
+void printMenuSteering(void);
+void printMenuRunTest(void);
+
+void getInput(char* inputBuf);
+void setNextQuestionTypeStep(int answer, int&amp; questionTypeStep);
+void doTimeDelayInMsec(int ms);
+
+
+void doTimeDelayInMsec(int ms)
+{
+    volatile int sum = 0;
+    for (int i = 0; i &lt; 1000; i++)
+    {
+        for (int j = 0; j &lt; 1000; j++)
+        {
+            for (int t = 0; t &lt; ms; t++)
+            {
+                sum++;
+            }
+        }
+    }
+}
+
+
+void getInput(char* inputBuf)
+{
+    printf("INPUT &gt; ");
+    fgets(inputBuf, sizeof(inputBuf), stdin);
+
+    // ¿£ÅÍ °³Çà¹®ÀÚ Á¦°Å
+    char* context = nullptr;
+    strtok_s(inputBuf, "\r", &amp;context);
+    strtok_s(inputBuf, "\n", &amp;context);
+}
+
+//static MenuGroup root;
+
+int main()
+{
+    SteeringTypeMenuGroup steeringType;
+    BrakeTypeMenuGroup brakeType;
+    CarTypeMenuGroup carType;
+    EngineTypeMenuGroup engineType;
+
+    root-&gt;Add(steeringType);
+
+    const int maximumInputChars = 100;
+    char inputBuf[maximumInputChars];
+    int questionTypeStep = CAR_TYPE;
+
+    while (1)
+    {
+        if (questionTypeStep == CAR_TYPE)
+        {
+            printMenuCarType();
+        }
+        else if (questionTypeStep == ENGINE_TYPE)
+        {
+            printMenuEngine();
+        }
+        else if (questionTypeStep == BRAKE_SYSTEM_TYPE)
+        {
+            printMenuBrakeSystem();
+        }
+        else if (questionTypeStep == STEERING_SYSTEM_TYPE)
+        {
+            printMenuSteering();
+        }
+        else if (questionTypeStep == RUN_TEST)
+        {
+            printMenuRunTest();
+        }
+        printf("===============================\n");
+
+        getInput(inputBuf);
+
+        if (isExitRequested(inputBuf))
+        {
+            printf("¹ÙÀÌ¹ÙÀÌ\n");
+            break;
+        }
+
+        // ¼ýÀÚ·Î µÈ ´ë´äÀÎÁö È®ÀÎ
+        char* checkNumber;
+        int answer = strtol(inputBuf, &amp;checkNumber, 10); // ¹®ÀÚ¿­À» 10Áø¼ö·Î º¯È¯
+
+        int retFlag;
+        if (false == isNumeric(checkNumber))
+            continue;
+
+        if (false == isCarTypeValidity(questionTypeStep, answer))
+            continue;
+
+        if (false == isEngineTypeValidity(questionTypeStep, answer))
+            continue;
+
+        if (false == isBrakeTypeValidity(questionTypeStep, answer))
+            continue;
+
+        if (false == isSteeringTypeValidity(questionTypeStep, answer))
+            continue;
+
+        if (false == isRunTestValidity(questionTypeStep, answer))
+            continue;
+
+        if (false == needToGoVeryFirst(questionTypeStep, answer))
+            continue;
+
+        if (false == needToGoPrevious(questionTypeStep, answer))
+            continue;
+
+        setNextQuestionTypeStep(answer, questionTypeStep);
+    }
+}
+
+void setNextQuestionTypeStep(int answer, int&amp; questionTypeStep)
+{
+    if (questionTypeStep &lt; RUN_TEST)
+    {
+        selectCarType(answer);
+        doTimeDelayInMsec(800);
+        questionTypeStep++;
+    }
+    if (questionTypeStep == RUN_TEST)
+    {
+        if (answer == 1) {
+            runProducedCar();
+            doTimeDelayInMsec(2000);
+        }
+        else if (answer == 2) {
+            printf("Test...\n");
+            doTimeDelayInMsec(1500);
+            testProducedCar();
+            doTimeDelayInMsec(2000);
+        }
+    }
+}
+
+bool needToGoVeryFirst(int&amp; questionTypeStep, int answer)
+{
+    bool bRet = true;
+    // Ã³À½À¸·Î µ¹¾Æ°¡±â
+    if (answer == 0 &amp;&amp; questionTypeStep == RUN_TEST)
+    {
+        questionTypeStep = CAR_TYPE;
+        bRet = false;
+    }
+    return bRet;
+}
+
+bool needToGoPrevious(int&amp; questionTypeStep, int answer)
+{
+    bool bRet = true;
+    // ÀÌÀüÀ¸·Î µ¹¾Æ°¡±â
+    if (answer == 0 &amp;&amp; questionTypeStep &gt;= CAR_TYPE)
+    {
+        questionTypeStep -= 1;
+        bRet = false;
+    }
+    return bRet;
+}
+
+bool isNumeric(char* checkNumber)
+{
+    bool bRet = true;
+    // ÀÔ·Â¹ÞÀº ¹®ÀÚ°¡ ¼ýÀÚ°¡ ¾Æ´Ï¶ó¸é
+    if (*checkNumber != '\0')
+    {
+        printf("ERROR :: ¼ýÀÚ¸¸ ÀÔ·Â °¡´É\n");
+        doTimeDelayInMsec(800);
+        bRet = false;
+    }
+    return bRet;
+}
+
+bool isCarTypeValidity(int questionTypeStep, int answer)
+{
+    bool bRet = true;
+    if (questionTypeStep == CAR_TYPE &amp;&amp; !(answer &gt;= 1 &amp;&amp; answer &lt;= 3))
+    {
+        printf("ERROR :: Â÷·® Å¸ÀÔÀº 1 ~ 3 ¹üÀ§¸¸ ¼±ÅÃ °¡´É\n");
+        doTimeDelayInMsec(800);
+        bRet = false;
+    }
+    return bRet;
+}
+
+bool isEngineTypeValidity(int questionTypeStep, int answer)
+{
+    bool bRet = true;
+    if (questionTypeStep == ENGINE_TYPE &amp;&amp; !(answer &gt;= 0 &amp;&amp; answer &lt;= 4))
+    {
+        printf("ERROR :: ¿£ÁøÀº 1 ~ 4 ¹üÀ§¸¸ ¼±ÅÃ °¡´É\n");
+        doTimeDelayInMsec(800);
+        bRet = false;
+    }
+    return bRet;
+}
+
+bool isBrakeTypeValidity(int questionTypeStep, int answer)
+{
+    bool bRet = true;
+    if (questionTypeStep == BRAKE_SYSTEM_TYPE &amp;&amp; !(answer &gt;= 0 &amp;&amp; answer &lt;= 3))
+    {
+        printf("ERROR :: Á¦µ¿ÀåÄ¡´Â 1 ~ 3 ¹üÀ§¸¸ ¼±ÅÃ °¡´É\n");
+        doTimeDelayInMsec(800);
+        bRet = false;
+    }
+    return bRet;
+}
+
+bool isSteeringTypeValidity(int questionTypeStep, int answer)
+{
+    bool bRet = true;
+    if (questionTypeStep == STEERING_SYSTEM_TYPE &amp;&amp; !(answer &gt;= 0 &amp;&amp; answer &lt;= 2))
+    {
+        printf("ERROR :: Á¶ÇâÀåÄ¡´Â 1 ~ 2 ¹üÀ§¸¸ ¼±ÅÃ °¡´É\n");
+        doTimeDelayInMsec(800);
+        bRet = false;
+    }
+    return bRet;
+}
+
+bool isRunTestValidity(int questionTypeStep, int answer)
+{
+    bool bRet = true;
+    if (questionTypeStep == RUN_TEST &amp;&amp; !(answer &gt;= 0 &amp;&amp; answer &lt;= 2))
+    {
+        printf("ERROR :: Run ¶Ç´Â Test Áß ÇÏ³ª¸¦ ¼±ÅÃ ÇÊ¿ä\n");
+        doTimeDelayInMsec(800);
+        bRet = false;
+    }
+    return bRet;
+}
+
+bool isExitRequested(char  inputBuf[100])
+{
+    return !strcmp(inputBuf, "exit");
+}
+
+void selectCarType(int answer)
+{
+    QuestionTypeStack[CAR_TYPE] = answer;
+    if (answer == 1)
+        printf("Â÷·® Å¸ÀÔÀ¸·Î SedanÀ» ¼±ÅÃÇÏ¼Ì½À´Ï´Ù.\n");
+    if (answer == 2)
+        printf("Â÷·® Å¸ÀÔÀ¸·Î SUVÀ» ¼±ÅÃÇÏ¼Ì½À´Ï´Ù.\n");
+    if (answer == 3)
+        printf("Â÷·® Å¸ÀÔÀ¸·Î TruckÀ» ¼±ÅÃÇÏ¼Ì½À´Ï´Ù.\n");
+}
+
+void selectEngine(int answer)
+{
+    QuestionTypeStack[ENGINE_TYPE] = answer;
+    if (answer == 1)
+        printf("GM ¿£ÁøÀ» ¼±ÅÃÇÏ¼Ì½À´Ï´Ù.\n");
+    if (answer == 2)
+        printf("TOYOTA ¿£ÁøÀ» ¼±ÅÃÇÏ¼Ì½À´Ï´Ù.\n");
+    if (answer == 3)
+        printf("WIA ¿£ÁøÀ» ¼±ÅÃÇÏ¼Ì½À´Ï´Ù.\n");
+}
+
+void selectbrakeSystem(int answer)
+{
+    QuestionTypeStack[BRAKE_SYSTEM_TYPE] = answer;
+    if (answer == 1)
+        printf("MANDO Á¦µ¿ÀåÄ¡¸¦ ¼±ÅÃÇÏ¼Ì½À´Ï´Ù.\n");
+    if (answer == 2)
+        printf("CONTINENTAL Á¦µ¿ÀåÄ¡¸¦ ¼±ÅÃÇÏ¼Ì½À´Ï´Ù.\n");
+    if (answer == 3)
+        printf("BOSCH Á¦µ¿ÀåÄ¡¸¦ ¼±ÅÃÇÏ¼Ì½À´Ï´Ù.\n");
+}
+
+void selectSteeringSystem(int answer)
+{
+    QuestionTypeStack[STEERING_SYSTEM_TYPE] = answer;
+    if (answer == 1)
+        printf("BOSCH Á¶ÇâÀåÄ¡¸¦ ¼±ÅÃÇÏ¼Ì½À´Ï´Ù.\n");
+    if (answer == 2)
+        printf("MOBIS Á¶ÇâÀåÄ¡¸¦ ¼±ÅÃÇÏ¼Ì½À´Ï´Ù.\n");
+}
+
+int isPartsCombinationValid(void)
+{
+    if (QuestionTypeStack[CAR_TYPE] == SEDAN &amp;&amp; QuestionTypeStack[BRAKE_SYSTEM_TYPE] == CONTINENTAL)
+    {
+        return false;
+    }
+    else if (QuestionTypeStack[CAR_TYPE] == SUV &amp;&amp; QuestionTypeStack[ENGINE_TYPE] == TOYOTA)
+    {
+        return false;
+    }
+    else if (QuestionTypeStack[CAR_TYPE] == TRUCK &amp;&amp; QuestionTypeStack[ENGINE_TYPE] == WIA)
+    {
+        return false;
+    }
+    else if (QuestionTypeStack[CAR_TYPE] == TRUCK &amp;&amp; QuestionTypeStack[BRAKE_SYSTEM_TYPE] == MANDO)
+    {
+        return false;
+    }
+    else if (QuestionTypeStack[BRAKE_SYSTEM_TYPE] == BOSCH_B &amp;&amp; QuestionTypeStack[STEERING_SYSTEM_TYPE] != BOSCH_S)
+    {
+        return false;
+    }
+    else
+    {
+        return true;
+    }
+    return true;
+}
+
+void runProducedCar()
+{
+    if (isPartsCombinationValid() == false)
+    {
+        printf("ÀÚµ¿Â÷°¡ µ¿ÀÛµÇÁö ¾Ê½À´Ï´Ù\n");
+    }
+    else
+    {
+        if (QuestionTypeStack[ENGINE_TYPE] == 4)
+        {
+            printf("¿£ÁøÀÌ °íÀå³ªÀÖ½À´Ï´Ù.\n");
+            printf("ÀÚµ¿Â÷°¡ ¿òÁ÷ÀÌÁö ¾Ê½À´Ï´Ù.\n");
+        }
+        else
+        {
+            if (QuestionTypeStack[CAR_TYPE] == 1)
+                printf("Car Type : Sedan\n");
+            if (QuestionTypeStack[CAR_TYPE] == 2)
+                printf("Car Type : SUV\n");
+            if (QuestionTypeStack[CAR_TYPE] == 3)
+                printf("Car Type : Truck\n");
+            if (QuestionTypeStack[ENGINE_TYPE] == 1)
+                printf("ENGINE_TYPE : GM\n");
+            if (QuestionTypeStack[ENGINE_TYPE] == 2)
+                printf("ENGINE_TYPE : TOYOTA\n");
+            if (QuestionTypeStack[ENGINE_TYPE] == 3)
+                printf("ENGINE_TYPE : WIA\n");
+            if (QuestionTypeStack[BRAKE_SYSTEM_TYPE] == 1)
+                printf("Brake System : Mando\n");
+            if (QuestionTypeStack[BRAKE_SYSTEM_TYPE] == 2)
+                printf("Brake System : Continental\n");
+            if (QuestionTypeStack[BRAKE_SYSTEM_TYPE] == 3)
+                printf("Brake System : Bosch\n");
+            if (QuestionTypeStack[STEERING_SYSTEM_TYPE] == 1)
+                printf("STEERING_TYPE : Bosch\n");
+            if (QuestionTypeStack[STEERING_SYSTEM_TYPE] == 2)
+                printf("STEERING_TYPE : Mobis\n");
+
+            printf("ÀÚµ¿Â÷°¡ µ¿ÀÛµË´Ï´Ù.\n");
+        }
+    }
+}
+
+void testProducedCar()
+{
+    if (QuestionTypeStack[CAR_TYPE] == SEDAN &amp;&amp; QuestionTypeStack[BRAKE_SYSTEM_TYPE] == CONTINENTAL)
+    {
+        printf("ÀÚµ¿Â÷ ºÎÇ° Á¶ÇÕ Å×½ºÆ® °á°ú : FAIL\n");
+        printf("Sedan¿¡´Â ContinentalÁ¦µ¿ÀåÄ¡ »ç¿ë ºÒ°¡\n");
+    }
+    else if (QuestionTypeStack[CAR_TYPE] == SUV &amp;&amp; QuestionTypeStack[ENGINE_TYPE] == TOYOTA)
+    {
+        printf("ÀÚµ¿Â÷ ºÎÇ° Á¶ÇÕ Å×½ºÆ® °á°ú : FAIL\n");
+        printf("SUV¿¡´Â TOYOTA¿£Áø »ç¿ë ºÒ°¡\n");
+    }
+    else if (QuestionTypeStack[CAR_TYPE] == TRUCK &amp;&amp; QuestionTypeStack[ENGINE_TYPE] == WIA)
+    {
+        printf("ÀÚµ¿Â÷ ºÎÇ° Á¶ÇÕ Å×½ºÆ® °á°ú : FAIL\n");
+        printf("Truck¿¡´Â WIA¿£Áø »ç¿ë ºÒ°¡\n");
+    }
+    else if (QuestionTypeStack[CAR_TYPE] == TRUCK &amp;&amp; QuestionTypeStack[BRAKE_SYSTEM_TYPE] == MANDO)
+    {
+        printf("ÀÚµ¿Â÷ ºÎÇ° Á¶ÇÕ Å×½ºÆ® °á°ú : FAIL\n");
+        printf("Truck¿¡´Â MandoÁ¦µ¿ÀåÄ¡ »ç¿ë ºÒ°¡\n");
+    }
+    else if (QuestionTypeStack[BRAKE_SYSTEM_TYPE] == BOSCH_B &amp;&amp; QuestionTypeStack[STEERING_SYSTEM_TYPE] != BOSCH_S)
+    {
+        printf("ÀÚµ¿Â÷ ºÎÇ° Á¶ÇÕ Å×½ºÆ® °á°ú : FAIL\n");
+        printf("BoschÁ¦µ¿ÀåÄ¡¿¡´Â BoschÁ¶ÇâÀåÄ¡ ÀÌ¿Ü »ç¿ë ºÒ°¡\n");
+    }
+    else
+    {
+        printf("ÀÚµ¿Â÷ ºÎÇ° Á¶ÇÕ Å×½ºÆ® °á°ú : PASS\n");
+    }
+}
+#endif
+#endif</pre>
+        <hr />
+        <table width="100%">
+            <thead>
+                <tr>
+                    <th align="center">
+                        <small>Generated by</small>
+                        <a href="https://github.com/OpenCppCoverage/OpenCppCoverage/releases">
+                            <strong>OpenCppCoverage (Version: 0.9.9.0)</strong>
+                        </a>
+                    </th>
+                </tr>
+            </thead>
+        </table>
+    </body>
+</html>
