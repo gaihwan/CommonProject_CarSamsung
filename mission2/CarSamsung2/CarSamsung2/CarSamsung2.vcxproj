@@ -127,10 +127,30 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="RootMenuGroup.cpp" />
+    <ClCompile Include="BrakeTypeMenuGroup.cpp" />
+    <ClCompile Include="CarSamsung_Test.cpp" />
+    <ClCompile Include="CarTypeMenuGroup.cpp" />
+    <ClCompile Include="EngineTypeMenuGroup.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="RunTestMenuGroup.cpp" />
+    <ClCompile Include="SteeringTypeMenuGroup.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="CarTypeMenuGroup.h" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BrakeTypeMenuGroup.h" />
+    <ClInclude Include="Command.h" />
+    <ClInclude Include="CommandFactory.h" />
+    <ClInclude Include="EngineTypeMenuGroup.h" />
+    <ClInclude Include="ICommand.h" />
+    <ClInclude Include="IMenuGroup.h" />
+    <ClInclude Include="Menu.h" />
+    <ClInclude Include="RootMenuGroup.h" />
+    <ClInclude Include="RunTestMenuGroup.h" />
+    <ClInclude Include="SteeringTypeMenuGroup.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,4 +1,4 @@
-#ifdef _DEBUG
+#ifdef _RELEASE
 
 #include "gmock/gmock.h"
 
@@ -10,11 +10,65 @@ int main()
 
 #else
 
+#include <iostream>
+#include <memory>
+#include <unordered_map>
+#include <string>
+#include <functional>
+
+#include "ICommand.h"
+#include "Command.h"
+#include "CommandFactory.h"
+#include "Menu.h"
+
+#if 1
+int main() {
+
+    CommandFactory factory;
+    factory.Register("CarSedan", []() { return std::make_unique <CarTypeSedanCommand>(); });
+    factory.Register("CarSUV", []() { return std::make_unique <CarTypeSUVCommand>(); });
+    factory.Register("CarTruck", []() { return std::make_unique <CarTypeTruckCommand>(); });
+    factory.Register("BrakeBosch", []() { return std::make_unique<BrakeTypeBoschCommand>(); });
+    factory.Register("BrakeContinental", []() { return std::make_unique <BrakeTypeContinentalCommand>(); });
+    factory.Register("BrakeMando", []() { return std::make_unique <BrakeTypeMandoCommand>(); });
+    factory.Register("EngineBroken", []() { return std::make_unique <EngineTypeBrokenCommand>(); });
+    factory.Register("EngineGM", []() { return std::make_unique <EngineTypeGMCommand>(); });
+    factory.Register("EngineToyota", []() { return std::make_unique <EngineTypeToyotaCommand>(); });
+    factory.Register("EngineWia", []() { return std::make_unique <EngineTypeWiaCommand>(); });
+    factory.Register("SteeringBosch", []() { return std::make_unique <SteeringTypeBoschCommand>(); });
+    factory.Register("SteeringMobis", []() { return std::make_unique <SteeringTypeMobisCommand>(); });
+
+    //// 2. 메뉴 구성 (Composite 구조)
+    auto root = std::make_unique<MenuGroup>("Main Menu");
+
+    auto menuLevel1 = std::make_unique<MenuGroup>("CAR_TYPE");
+    menuLevel1->Add(std::make_unique<MenuItem>("CarSedan", factory.Create("CarSedan")));
+    menuLevel1->Add(std::make_unique<MenuItem>("CarSUV", factory.Create("CarSUV")));
+    menuLevel1->Add(std::make_unique<MenuItem>("CarTruck", factory.Create("CarTruck")));
+
+
+    //////fileMenu->Add(std::make_unique<MenuItem>("SteeringType", factory.Create("Steering")));
+    ////
+
+    ////// 2. 메뉴 구성 (Composite 구조)
+    root->Add(std::move(menuLevel1));
+
+    ////// 3. 메뉴 출력
+    root->Display();
+}
+
+#else
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-#define CLEAR_SCREEN "\033[H\033[2J"
+#include "BrakeTypeMenuGroup.h"
+#include "EngineTypeMenuGroup.h"
+#include "SteeringTypeMenuGroup.h"
+#include "CarTypeMenuGroup.h"
+#include "RunTestMenuGroup.h"
+#include "RootMenuGroup.h"
+
 
 const int QUESTION_TYPE_STACKS = 10;
 int QuestionTypeStack[QUESTION_TYPE_STACKS];
@@ -50,46 +104,6 @@ void getInput(char* inputBuf);
 void setNextQuestionTypeStep(int answer, int& questionTypeStep);
 void doTimeDelayInMsec(int ms);
 
-enum QuestionType
-{
-    CAR_TYPE = 1,
-    ENGINE_TYPE,
-    BRAKE_SYSTEM_TYPE,
-    STEERING_SYSTEM_TYPE,
-    RUN_TEST,
-    QUESTION_TYPE_END,
-};
-
-enum CarType
-{
-    SEDAN = 1,
-    SUV,
-    TRUCK,
-    CAR_TYPE_END,
-};
-
-enum Engine
-{
-    GM = 1,
-    TOYOTA,
-    WIA,
-    ENGIN_TYPE_END,
-};
-
-enum brakeSystem
-{
-    MANDO = 1,
-    CONTINENTAL,
-    BOSCH_B,
-    BRAKE_TYPE_END,
-};
-
-enum SteeringSystem
-{
-    BOSCH_S = 1,
-    MOBIS,
-    STEERING_TYPE_END,
-};
 
 void doTimeDelayInMsec(int ms)
 {
@@ -106,60 +120,6 @@ void doTimeDelayInMsec(int ms)
     }
 }
 
-void printMenuCarType(void)
-{
-    printf(CLEAR_SCREEN);
-    printf("        ______________\n");
-    printf("       /|            | \n");
-    printf("  ____/_|_____________|____\n");
-    printf(" |                      O  |\n");
-    printf(" '-(@)----------------(@)--'\n");
-    printf("===============================\n");
-    printf("어떤 차량 타입을 선택할까요?\n");
-    printf("1. Sedan\n");
-    printf("2. SUV\n");
-    printf("3. Truck\n");
-}
-
-void printMenuEngine(void)
-{
-    printf(CLEAR_SCREEN);
-    printf("어떤 엔진을 탑재할까요?\n");
-    printf("0. 뒤로가기\n");
-    printf("1. GM\n");
-    printf("2. TOYOTA\n");
-    printf("3. WIA\n");
-    printf("4. 고장난 엔진\n");
-}
-
-void printMenuBrakeSystem(void)
-{
-    printf(CLEAR_SCREEN);
-    printf("어떤 제동장치를 선택할까요?\n");
-    printf("0. 뒤로가기\n");
-    printf("1. MANDO\n");
-    printf("2. CONTINENTAL\n");
-    printf("3. BOSCH\n");
-}
-
-void printMenuSteering(void)
-{
-    printf(CLEAR_SCREEN);
-    printf("어떤 조향장치를 선택할까요?\n");
-    printf("0. 뒤로가기\n");
-    printf("1. BOSCH\n");
-    printf("2. MOBIS\n");
-}
-
-void printMenuRunTest(void)
-{
-    printf(CLEAR_SCREEN);
-    printf("멋진 차량이 완성되었습니다.\n");
-    printf("어떤 동작을 할까요?\n");
-    printf("0. 처음 화면으로 돌아가기\n");
-    printf("1. RUN\n");
-    printf("2. Test\n");
-}
 
 void getInput(char* inputBuf)
 {
@@ -172,8 +132,17 @@ void getInput(char* inputBuf)
     strtok_s(inputBuf, "\n", &context);
 }
 
+static MenuGroup root;
+
 int main()
 {
+    SteeringTypeMenuGroup steeringType;
+    BrakeTypeMenuGroup brakeType;
+    CarTypeMenuGroup carType;
+    EngineTypeMenuGroup engineType;
+
+    root->Add(steeringType);
+
     const int maximumInputChars = 100;
     char inputBuf[maximumInputChars];
     int questionTypeStep = CAR_TYPE;
@@ -461,11 +430,11 @@ void runProducedCar()
             if (QuestionTypeStack[CAR_TYPE] == 3)
                 printf("Car Type : Truck\n");
             if (QuestionTypeStack[ENGINE_TYPE] == 1)
-                printf("Engine : GM\n");
+                printf("ENGINE_TYPE : GM\n");
             if (QuestionTypeStack[ENGINE_TYPE] == 2)
-                printf("Engine : TOYOTA\n");
+                printf("ENGINE_TYPE : TOYOTA\n");
             if (QuestionTypeStack[ENGINE_TYPE] == 3)
-                printf("Engine : WIA\n");
+                printf("ENGINE_TYPE : WIA\n");
             if (QuestionTypeStack[BRAKE_SYSTEM_TYPE] == 1)
                 printf("Brake System : Mando\n");
             if (QuestionTypeStack[BRAKE_SYSTEM_TYPE] == 2)
@@ -473,9 +442,9 @@ void runProducedCar()
             if (QuestionTypeStack[BRAKE_SYSTEM_TYPE] == 3)
                 printf("Brake System : Bosch\n");
             if (QuestionTypeStack[STEERING_SYSTEM_TYPE] == 1)
-                printf("SteeringSystem : Bosch\n");
+                printf("STEERING_TYPE : Bosch\n");
             if (QuestionTypeStack[STEERING_SYSTEM_TYPE] == 2)
-                printf("SteeringSystem : Mobis\n");
+                printf("STEERING_TYPE : Mobis\n");
 
             printf("자동차가 동작됩니다.\n");
         }
@@ -514,5 +483,5 @@ void testProducedCar()
         printf("자동차 부품 조합 테스트 결과 : PASS\n");
     }
 }
-
+#endif
 #endif
