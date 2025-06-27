@@ -3,9 +3,9 @@
 | 요구사항 체크리스트 ||
 |:---:|:---:|
 | D1 | O |
-| D2 | X |
+| D2 | O |
 | D3 | X |
-| D4 | X |
+| D4 | O |
 | D4 | X |
 
 ###### 참고 :
@@ -17,5 +17,5 @@
 
 ---
 ## 2. Code Coverage 최종 측정결과 캡쳐화면<br>
-![Debug Mod](https://refactoring.com/refact2.jpg)
+![Debug Mod](CarSamsung2_CoverageResult.png)
 
